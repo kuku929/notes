@@ -43,7 +43,7 @@
 
 % Set title and course name
 \settitle{\textbf{1}}
-\setsubtitle{Basics of C}
+\setsubtitle{}
 \setcourse{EE2003}
 
 \begin{document}
@@ -52,17 +52,127 @@
 \maketitle
 \thispagestyle{first}
 \section*{Intel 8086}
-\subsection{Fetch, Decode and Execute}
-
-\diagram{50}{}{8086.jpg}
-
+\diagram{70}{center}{8086.jpg}
+\subsection*{Execution Unit}
 \begin{itemize}
 	\item Flag register used to store some result about an operation. Example
 		result of a comparision or overflow bit etc. Used by the ALU
-	\item E(xtended)SP: stack pointer
+	\item E(xtended)SP: Stack pointer
 	\item EA/B/C/D: General registers. Do whatever you want
-	\item ESI/ EDI: for string instructions. strlen() or memcpy()
+	\item ESI/ EDI: For string instructions. strlen() or memcpy()
 \end{itemize}
+
+\subsection*{Bus Interface Unit}
+\textbf{CS, SS, DS} store the starting address of code, stack and data segments.
+The IP(instruction pointer) or the {A,B,C,D} registers are used to store the offset from the start address.
+Formula is given by:  \[Address = Segment << 4 + offset\]
+
+BP and SP point to SS, IP points to CS, A/B/C/D point to DS (or ES, prof did not remember)
+
+
+\settitle{\textbf{2}}
+\subsection*{x86 Ops}
+\begin{minted}[linenos,frame=single]{nasm}
+MOV EAX, EBX	; EAX <- EBX, register direct
+MOV EAX, [ECX]	; Load from memory, register indirect
+MOV [ECX], EAX 	; store to memory
+MOV EAX, [EBX - N]	; register indirect with offset(immediate)
+MOV EAX, EBX - ECX 	; THIS IS WRONG
+
+
+; Load Effective Addr:
+; Essentially you can do math in the right operand.
+; Used in compilers for things like
+; int *p = &point[i].ycoord;
+LEA EAX, [EBP+8*EAX+4]
+
+; ALU Ops
+ADD EAX, EBX	; EAX <- EAX + EBX
+SUB EAX, DWORD PTR[EBX]
+SUB EAX, WORD PTR[EBX]
+SUB EAX, BYTE PTR[EBX]
+
+; Logical Ops
+AND EAX, DWORD PTR [EBP + 4]
+\end{minted}
+
+\question{
+Write assembly to do the following:
+\newline
+$EAX = x*y + a-b$
+\newline
+$EBX = (x \oplus y) | (a \wedge b)$
+}
+
+\begin{minted}[linenos,frame=single]{nasm}
+; first part
+MOV EAX, X
+MUL y
+MOV EBX, a
+SUB EBX, b
+ADD EAX, EBX
+
+;second part
+MOV EBX, x
+XOR EBX, y
+MOV ECX, a
+AND ECX, b
+OR EBX, ECX
+\end{minted}
+
+\pagebreak
+\question{Write a program to evaluate $z = x * y$ using repeated addition}
+\begin{minted}[linenos, frame=single]{nasm}
+XOR EAX, EAX
+MOV EBX, y
+CMP EBX, 0
+JZ done
+add:	
+ADD EAX, x
+DEC EBX
+JNZ add
+
+done:
+NOP
+\end{minted}
+\question{Write a program to calculate the string length of a constant string}
+\begin{minted}[linenos, frame=single]{nasm}
+; assuming the data is little endian
+XOR EAX, EAX
+loop: 
+CMP [EBX], 0
+JZ done
+INC EBX
+INC EAX
+JMP loop
+
+done:
+NOP
+\end{minted}
+
+\question{Write a program to swap two integers x and y}
+\begin{minted}[linenos, frame=single]{c}
+Swap(int *pX, int *pY){
+	__asm{
+		// this uses extra
+		// memory though
+		// ALSO, this is wrong
+		// maybe bcoz of virtual
+		// addressing?
+		PUSH [pX]
+		PUSH [pY]
+		POP [pX]
+		POP [pY]
+
+		MOV EAX, [pX]
+		MOV EBX, [pY]
+
+		XOR EAX, EBX
+		XOR EBX, EAX
+		XOR E
+	}
+}
+\end{minted}
 
 \end{document}
 
