@@ -62,6 +62,8 @@
 	\item ESI/ EDI: For string instructions. strlen() or memcpy()
 \end{itemize}
 
+The Extended registers \textbf{extend} the A/B/C/DX registers to 32 bit
+
 \subsection*{Bus Interface Unit}
 \textbf{CS, SS, DS} store the starting address of code, stack and data segments.
 The IP(instruction pointer) or the {A,B,C,D} registers are used to store the offset from the start address.
@@ -73,11 +75,12 @@ BP and SP point to SS, IP points to CS, A/B/C/D point to DS (or ES, prof did not
 \settitle{\textbf{2}}
 \subsection*{x86 Ops}
 \begin{minted}[linenos,frame=single]{nasm}
-MOV EAX, EBX	; EAX <- EBX, register direct
-MOV EAX, [ECX]	; Load from memory, register indirect
-MOV [ECX], EAX 	; store to memory
-MOV EAX, [EBX - N]	; register indirect with offset(immediate)
-MOV EAX, EBX - ECX 	; THIS IS WRONG
+MOV EAX, EBX       ; EAX <- EBX, register direct
+MOV EAX, [ECX]     ; Load from memory, register indirect
+MOV [ECX], EAX     ; store to memory
+MOV EAX, [EBX - N] ; register indirect with offset, requires the EDS as well
+MOV EAX, 0x1602    ; immediate mode, no address calculation required
+MOV EAX, EBX - ECX ; THIS IS WRONG
 
 
 ; Load Effective Addr:
@@ -154,25 +157,51 @@ NOP
 \begin{minted}[linenos, frame=single]{c}
 Swap(int *pX, int *pY){
 	__asm{
-		// this uses extra
-		// memory though
-		// ALSO, this is wrong
-		// maybe bcoz of virtual
-		// addressing?
-		PUSH [pX]
-		PUSH [pY]
-		POP [pX]
-		POP [pY]
+		MOV EAX, pX
+		MOV EBX, pY
 
-		MOV EAX, [pX]
-		MOV EBX, [pY]
-
-		XOR EAX, EBX
-		XOR EBX, EAX
-		XOR E
+		PUSH DWORD PTR [EAX]
+		PUSH DWORD PTR [EBX]
+		POP DWORD PTR [EAX]
+		POP DWORD PTR [EBX]
 	}
 }
 \end{minted}
+
+\pagebreak
+
+\question{Look at these swaps and realize the differences}
+\begin{minted}[linenos, frame=single]{c}
+Swap(int *pX, int *pY){
+	__asm{
+		; this thing is like gae
+		; the most useless thing ever
+		PUSH pX
+		PUSH pY
+		POP pX
+		POP pY
+	}
+}
+
+Swap2(int x, int y){
+	__asm{
+		; this thing is like gae
+		; the most useless thing ever
+		PUSH x 
+		PUSH y 
+		POP x
+		POP y
+	}
+}
+\end{minted}
+
+
+\section*{Compiling a C program}
+\subsection*{Optimizing}
+You can optimize youc \texttt{*.c} code by using the \texttt{\textbackslash O1} flag if using MSVC
+
+It removes dead code and can optimize to reduce intstructions. However one should
+be very careful and not trust the compiler to do their job perfectly all the time.
 
 \end{document}
 
